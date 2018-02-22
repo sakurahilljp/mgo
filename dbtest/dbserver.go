@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"time"
 
-	mgo "github.com/globalsign/mgo"
+	mgo "github.com/sakurahilljp/mgo"
 	"gopkg.in/tomb.v2"
 )
 
