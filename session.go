@@ -4332,12 +4332,12 @@ func (iter *Iter) getMoreCmd() *queryOp {
 }
 
 type countCmd struct {
-	Count     string
-	Query     interface{}
-	Limit     int32  `bson:",omitempty"`
-	Skip      int32  `bson:",omitempty"`
-	Hint      bson.D `bson:"hint,omitempty"`
-	MaxTimeMS int    `bson:"maxTimeMS,omitempty"`
+	Count     string      `bson:"count"`
+	Query     interface{} `bson:"query"`
+	Limit     int32       `bson:"limit,omitempty"`
+	Skip      int32       `bson:"skip,omitempty"`
+	Hint      bson.D      `bson:"hint,omitempty"`
+	MaxTimeMS int         `bson:"maxTimeMS,omitempty"`
 }
 
 // Count returns the total number of documents in the result set.

@@ -131,16 +131,16 @@ func (cluster *mongoCluster) removeServer(server *mongoServer) {
 	server.CloseIdle()
 }
 
-type isMasterResult struct {
-	IsMaster       bool
-	Secondary      bool
-	Primary        string
-	Hosts          []string
-	Passives       []string
-	Tags           bson.D
-	Msg            string
-	SetName        string `bson:"setName"`
-	MaxWireVersion int    `bson:"maxWireVersion"`
+type isMasterResult struct { // mongo command
+	IsMaster       bool     `bson:"ismaster"`
+	Secondary      bool     `bson:"secondary"`
+	Primary        string   `bson:"primary"`
+	Hosts          []string `bson:"hosts"`
+	Passives       []string `bson:"passives"`
+	Tags           bson.D   `bson:"tags"`
+	Msg            string   `bson:"msg"`
+	SetName        string   `bson:"setName"`
+	MaxWireVersion int      `bson:"maxWireVersion"`
 }
 
 func (cluster *mongoCluster) isMaster(socket *mongoSocket, result *isMasterResult) error {

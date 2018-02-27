@@ -39,11 +39,11 @@ import (
 )
 
 type authCmd struct {
-	Authenticate int
+	Authenticate int `bson:"authenticate"`
 
-	Nonce string
-	User  string
-	Key   string
+	Nonce string `bson:"nonce"`
+	User  string `bson:"user"`
+	Key   string `bson:"key"`
 }
 
 type startSaslCmd struct {
@@ -51,22 +51,22 @@ type startSaslCmd struct {
 }
 
 type authResult struct {
-	ErrMsg string
-	Ok     bool
+	ErrMsg string `bson:"errmsg"`
+	Ok     bool   `bson:"ok"`
 }
 
 type getNonceCmd struct {
-	GetNonce int
+	GetNonce int `bson:"getnonce"`
 }
 
 type getNonceResult struct {
-	Nonce string
+	Nonce string `bson:"nonce"`
 	Err   string `bson:"$err"`
-	Code  int
+	Code  int    `bson:"code"`
 }
 
 type logoutCmd struct {
-	Logout int
+	Logout int `bson:"logout"`
 }
 
 type saslCmd struct {
@@ -74,17 +74,17 @@ type saslCmd struct {
 	Continue       int    `bson:"saslContinue,omitempty"`
 	ConversationId int    `bson:"conversationId,omitempty"`
 	Mechanism      string `bson:"mechanism,omitempty"`
-	Payload        []byte
+	Payload        []byte `bson:"payload"`
 }
 
 type saslResult struct {
 	Ok    bool `bson:"ok"`
 	NotOk bool `bson:"code"` // Server <= 2.3.2 returns ok=1 & code>0 on errors (WTF?)
-	Done  bool
+	Done  bool `bson:"done"`
 
-	ConversationId int `bson:"conversationId"`
-	Payload        []byte
-	ErrMsg         string
+	ConversationId int    `bson:"conversationId"`
+	Payload        []byte `bson:"payload"`
+	ErrMsg         string `bson:"errmsg"`
 }
 
 type saslStepper interface {
