@@ -112,8 +112,8 @@ type Session struct {
 //    https://docs.mongodb.com/manual/core/databases-and-collections/#databases
 //
 type Database struct {
-	Session *Session
-	Name    string
+	Session *Session `bson:"session"`
+	Name    string   `bson:"name"`
 }
 
 // Collection stores documents
@@ -123,9 +123,9 @@ type Database struct {
 //    https://docs.mongodb.com/manual/core/databases-and-collections/#collections
 //
 type Collection struct {
-	Database *Database
-	Name     string // "collection"
-	FullName string // "db.collection"
+	Database *Database `bson:"database"`
+	Name     string    `bson:"name"`     // "collection"
+	FullName string    `bson:"fullname"` // "db.collection"
 }
 
 // Query keeps info on the query.
@@ -1201,17 +1201,19 @@ func (db *Database) RemoveUser(user string) error {
 }
 
 type indexSpec struct {
-	Name, NS                string
-	Key                     bson.D
-	Unique                  bool    `bson:",omitempty"`
+	Name                    string  `bson:"name"`
+	NS                      string  `bson:"ns"`
+	Key                     bson.D  `bson:"key"`
+	Unique                  bool    `bson:"unique,omitempty"`
 	DropDups                bool    `bson:"dropDups,omitempty"`
-	Background              bool    `bson:",omitempty"`
-	Sparse                  bool    `bson:",omitempty"`
-	Bits                    int     `bson:",omitempty"`
-	Min, Max                float64 `bson:",omitempty"`
+	Background              bool    `bson:"background,omitempty"`
+	Sparse                  bool    `bson:"sparse,omitempty"`
+	Bits                    int     `bson:"bits,omitempty"`
+	Min                     float64 `bson:"min,omitempty"`
+	Max                     float64 `bson:"max,omitempty"`
 	BucketSize              float64 `bson:"bucketSize,omitempty"`
 	ExpireAfter             int     `bson:"expireAfterSeconds,omitempty"`
-	Weights                 bson.D  `bson:",omitempty"`
+	Weights                 bson.D  `bson:"weights,omitempty"`
 	DefaultLanguage         string  `bson:"default_language,omitempty"`
 	LanguageOverride        string  `bson:"language_override,omitempty"`
 	TextIndexVersion        int     `bson:"textIndexVersion,omitempty"`
@@ -1226,12 +1228,12 @@ type indexSpec struct {
 // index entries supports efficient equality matches and range-based query operations.
 // In addition, MongoDB can return sorted results by using the ordering in the index.
 type Index struct {
-	Key           []string // Index key fields; prefix name with dash (-) for descending order
-	Unique        bool     // Prevent two documents from having the same index key
-	DropDups      bool     // Drop documents with the same index key as a previously indexed one
-	Background    bool     // Build index in background and return immediately
-	Sparse        bool     // Only index documents containing the Key fields
-	PartialFilter bson.M   // Partial index filter expression
+	Key           []string `bson:"key"`           // Index key fields; prefix name with dash (-) for descending order
+	Unique        bool     `bson:"unique"`        // Prevent two documents from having the same index key
+	DropDups      bool     `bson:"dropdups"`      // Drop documents with the same index key as a previously indexed one
+	Background    bool     `bson:"background"`    // Build index in background and return immediately
+	Sparse        bool     `bson:"sparse"`        // Only index documents containing the Key fields
+	PartialFilter bson.M   `bson:"partialfilter"` // Partial index filter expression
 
 	// If ExpireAfter is defined the server will periodically delete
 	// documents with indexed time.Time older than the provided delta.
@@ -1584,8 +1586,8 @@ func (c *Collection) DropIndex(key ...string) error {
 
 	db := c.Database.With(session)
 	result := struct {
-		ErrMsg string
-		Ok     bool
+		ErrMsg string `bson:"errmsg"`
+		Ok     bool   `bson:"ok"`
 	}{}
 	err = db.Run(bson.D{{Name: "dropIndexes", Value: c.Name}, {Name: "index", Value: keyInfo.name}}, &result)
 	if err != nil {
@@ -1636,8 +1638,8 @@ func (c *Collection) DropIndexName(name string) error {
 	}
 
 	result := struct {
-		ErrMsg string
-		Ok     bool
+		ErrMsg string `bson:"errmsg"`
+		Ok     bool   `bson:"ok"`
 	}{}
 	err = c.Database.Run(bson.D{{Name: "dropIndexes", Value: c.Name}, {Name: "index", Value: name}}, &result)
 	if err != nil {
@@ -1659,8 +1661,8 @@ func (c *Collection) DropAllIndexes() error {
 
 	db := c.Database.With(session)
 	result := struct {
-		ErrMsg string
-		Ok     bool
+		ErrMsg string `bson:"errmsg"`
+		Ok     bool   `bson:"ok"`
 	}{}
 	err := db.Run(bson.D{{Name: "dropIndexes", Value: c.Name}, {Name: "index", Value: "*"}}, &result)
 	if err != nil {
@@ -1694,8 +1696,8 @@ func (c *Collection) Indexes() (indexes []Index, err error) {
 
 	// Try with a command.
 	var result struct {
-		Indexes []bson.Raw
-		Cursor  cursorData
+		Indexes []bson.Raw `bson:"indexes"`
+		Cursor  cursorData `bson:"cursor"`
 	}
 	var iter *Iter
 	err = c.Database.With(cloned).Run(bson.D{{Name: "listIndexes", Value: c.Name}, {Name: "cursor", Value: bson.D{{Name: "batchSize", Value: batchSize}}}}, &result)
@@ -2378,7 +2380,7 @@ func (c *Collection) Find(query interface{}) *Query {
 
 type repairCmd struct {
 	RepairCursor string           `bson:"repairCursor"`
-	Cursor       *repairCmdCursor `bson:",omitempty"`
+	Cursor       *repairCmdCursor `bson:"cursor,omitempty"`
 }
 
 type repairCmdCursor struct {
@@ -2401,7 +2403,9 @@ func (c *Collection) Repair() *Iter {
 
 	batchSize := int(cloned.queryConfig.op.limit)
 
-	var result struct{ Cursor cursorData }
+	var result struct {
+		Cursor cursorData `bson:"cursor"`
+	}
 
 	cmd := repairCmd{
 		RepairCursor: c.Name,
@@ -2434,10 +2438,10 @@ type Pipe struct {
 }
 
 type pipeCmd struct {
-	Aggregate string
-	Pipeline  interface{}
-	Cursor    *pipeCmdCursor `bson:",omitempty"`
-	Explain   bool           `bson:",omitempty"`
+	Aggregate string         `bson:"aggregate"`
+	Pipeline  interface{}    `bson:"pipeline"`
+	Cursor    *pipeCmdCursor `bson:"cursor,omitempty"`
+	Explain   bool           `bson:"explain,omitempty"`
 	AllowDisk bool           `bson:"allowDiskUse,omitempty"`
 	MaxTimeMS int64          `bson:"maxTimeMS,omitempty"`
 }
@@ -2484,8 +2488,8 @@ func (p *Pipe) Iter() *Iter {
 	c := p.collection.With(cloned)
 
 	var result struct {
-		Result []bson.Raw // 2.4, no cursors.
-		Cursor cursorData // 2.6+, with cursors.
+		Result []bson.Raw `bson:"result"` // 2.4, no cursors.
+		Cursor cursorData `bson:"cursor"` // 2.6+, with cursors.
 	}
 
 	cmd := pipeCmd{
@@ -2690,10 +2694,12 @@ func (p *Pipe) SetMaxTime(d time.Duration) *Pipe {
 //
 // mgo.v3: Use a single user-visible error type.
 type LastError struct {
-	Err             string
-	Code, N, Waited int
-	FSyncFiles      int `bson:"fsyncFiles"`
-	WTimeout        bool
+	Err             string      `bson:"err"`
+	Code            int         `bson:"code"`
+	N               int         `bson:"n"`
+	Waited          int         `bson:"waited"`
+	FSyncFiles      int         `bson:"fsyncFiles"`
+	WTimeout        bool        `bson:"wtimeout"`
 	UpdatedExisting bool        `bson:"updatedExisting"`
 	UpsertedId      interface{} `bson:"upserted"`
 
@@ -2707,17 +2713,17 @@ func (err *LastError) Error() string {
 
 type queryError struct {
 	Err           string `bson:"$err"`
-	ErrMsg        string
-	Assertion     string
-	Code          int
-	AssertionCode int `bson:"assertionCode"`
+	ErrMsg        string `bson:"errmsg"`
+	Assertion     string `bson:"assertion"`
+	Code          int    `bson:"code"`
+	AssertionCode int    `bson:"assertionCode"`
 }
 
 // QueryError is returned when a query fails
 type QueryError struct {
-	Code      int
-	Message   string
-	Assertion bool
+	Code      int    `bson:"code"`
+	Message   string `bson:"message"`
+	Assertion bool   `bson:"assertion"`
 }
 
 func (err *QueryError) Error() string {
@@ -2796,10 +2802,10 @@ type ChangeInfo struct {
 	// Updated reports the number of existing documents modified.
 	// Due to server limitations, this reports the same value as the Matched field when
 	// talking to MongoDB <= 2.4 and on Upsert and Apply (findAndModify) operations.
-	Updated    int
-	Removed    int         // Number of documents removed
-	Matched    int         // Number of documents matched but not necessarily changed
-	UpsertedId interface{} // Upserted _id field, when not explicitly provided
+	Updated    int         `bson:"updated"`
+	Removed    int         `bson:"removed"`    // Number of documents removed
+	Matched    int         `bson:"matched"`    // Number of documents matched but not necessarily changed
+	UpsertedId interface{} `bson:"upsertedid"` // Upserted _id field, when not explicitly provided
 }
 
 // UpdateAll finds all documents matching the provided selector document
@@ -3462,10 +3468,10 @@ func (q *Query) One(result interface{}) (err error) {
 	}
 	if expectFindReply {
 		var findReply struct {
-			Ok     bool
-			Code   int
-			Errmsg string
-			Cursor cursorData
+			Ok     bool       `bson:"ok"`
+			Code   int        `bson:"code"`
+			Errmsg string     `bson:"errmsg"`
+			Cursor cursorData `bson:"cursor"`
 		}
 		err = bson.Unmarshal(data, &findReply)
 		if err != nil {
@@ -3551,8 +3557,8 @@ func prepareFindOp(socket *mongoSocket, op *queryOp, limit int32) bool {
 type cursorData struct {
 	FirstBatch []bson.Raw `bson:"firstBatch"`
 	NextBatch  []bson.Raw `bson:"nextBatch"`
-	NS         string
-	Id         int64
+	NS         string     `bson:"ns"`
+	Id         int64      `bson:"id"`
 }
 
 // findCmd holds the command used for performing queries on MongoDB 3.2+.
@@ -3720,8 +3726,8 @@ func (db *Database) CollectionNames() (names []string, err error) {
 
 	// Try with a command.
 	var result struct {
-		Collections []bson.Raw
-		Cursor      cursorData
+		Collections []bson.Raw `bson:"collections"`
+		Cursor      cursorData `bson:"cursor"`
 	}
 	err = db.With(cloned).Run(bson.D{{Name: "listCollections", Value: 1}, {Name: "cursor", Value: bson.D{{Name: "batchSize", Value: batchSize}}}}, &result)
 	if err == nil {
@@ -3736,7 +3742,9 @@ func (db *Database) CollectionNames() (names []string, err error) {
 		} else {
 			iter = cloned.DB(ns[0]).C(ns[1]).NewIter(nil, firstBatch, result.Cursor.Id, nil)
 		}
-		var coll struct{ Name string }
+		var coll struct {
+			Name string `bson:"name"`
+		}
 		for iter.Next(&coll) {
 			names = append(names, coll.Name)
 		}
@@ -3753,7 +3761,9 @@ func (db *Database) CollectionNames() (names []string, err error) {
 	// Command not yet supported. Query the database instead.
 	nameIndex := len(db.Name) + 1
 	iter := db.C("system.namespaces").Find(nil).Iter()
-	var coll struct{ Name string }
+	var coll struct {
+		Name string `bson:"name"`
+	}
 	for iter.Next(&coll) {
 		if strings.Index(coll.Name, "$") < 0 || strings.Index(coll.Name, ".oplog.$") >= 0 {
 			names = append(names, coll.Name[nameIndex:])
@@ -3768,9 +3778,9 @@ func (db *Database) CollectionNames() (names []string, err error) {
 
 type dbNames struct {
 	Databases []struct {
-		Name  string
-		Empty bool
-	}
+		Name  string `bson:"name"`
+		Empty bool   `bson:"empty"`
+	} `bson:"databases"`
 }
 
 // DatabaseNames returns the names of non-empty databases present in the cluster.
@@ -4362,7 +4372,9 @@ func (q *Query) Count() (n int, err error) {
 	// not checking the error because if type assertion fails, we
 	// simply want a Zero bson.D
 	hint, _ := q.op.options.Hint.(bson.D)
-	result := struct{ N int }{}
+	result := struct {
+		N int `bson:"n"`
+	}{}
 	err = session.DB(dbname).Run(countCmd{cname, query, limit, op.skip, hint, op.options.MaxTimeMS}, &result)
 
 	return result.N, err
@@ -4374,9 +4386,9 @@ func (c *Collection) Count() (n int, err error) {
 }
 
 type distinctCmd struct {
-	Collection string `bson:"distinct"`
-	Key        string
-	Query      interface{} `bson:",omitempty"`
+	Collection string      `bson:"distinct"`
+	Key        string      `bson:"key"`
+	Query      interface{} `bson:"query,omitempty"`
 }
 
 // Distinct unmarshals into result the list of distinct values for the given key.
@@ -4404,7 +4416,9 @@ func (q *Query) Distinct(key string, result interface{}) error {
 	dbname := op.collection[:c]
 	cname := op.collection[c+1:]
 
-	var doc struct{ Values bson.Raw }
+	var doc struct {
+		Values bson.Raw `bson:"values"`
+	}
 	err := session.DB(dbname).Run(distinctCmd{cname, key, op.query}, &doc)
 	if err != nil {
 		return err
@@ -4413,26 +4427,30 @@ func (q *Query) Distinct(key string, result interface{}) error {
 }
 
 type mapReduceCmd struct {
-	Collection string `bson:"mapreduce"`
-	Map        string `bson:",omitempty"`
-	Reduce     string `bson:",omitempty"`
-	Finalize   string `bson:",omitempty"`
-	Out        interface{}
-	Query      interface{} `bson:",omitempty"`
-	Sort       interface{} `bson:",omitempty"`
-	Scope      interface{} `bson:",omitempty"`
-	Limit      int32       `bson:",omitempty"`
-	Verbose    bool        `bson:",omitempty"`
+	Collection string      `bson:"mapreduce"`
+	Map        string      `bson:"map,omitempty"`
+	Reduce     string      `bson:"reduce,omitempty"`
+	Finalize   string      `bson:"finalize,omitempty"`
+	Out        interface{} `bson:"out"`
+	Query      interface{} `bson:"query,omitempty"`
+	Sort       interface{} `bson:"sort,omitempty"`
+	Scope      interface{} `bson:"scope,omitempty"`
+	Limit      int32       `bson:"limit,omitempty"`
+	Verbose    bool        `bson:"verbose,omitempty"`
 }
 
 type mapReduceResult struct {
-	Results    bson.Raw
-	Result     bson.Raw
-	TimeMillis int64 `bson:"timeMillis"`
-	Counts     struct{ Input, Emit, Output int }
-	Ok         bool
-	Err        string
-	Timing     *MapReduceTime
+	Results    bson.Raw `bson:"results"`
+	Result     bson.Raw `bson:"result"`
+	TimeMillis int64    `bson:"timeMillis"`
+	Counts     struct {
+		Input  int `bson:"input"`
+		Emit   int `bson:"emit"`
+		Output int `bson:"output"`
+	} `bson:"counts"`
+	Ok     bool           `bson:"ok"`
+	Err    string         `bson:"$err"`
+	Timing *MapReduceTime `bson:"timing"`
 }
 
 // MapReduce used to perform Map Reduce operations
@@ -4979,13 +4997,13 @@ func (iter *Iter) replyFunc() replyFunc {
 }
 
 type writeCmdResult struct {
-	Ok        bool
-	N         int
-	NModified int `bson:"nModified"`
+	Ok        bool `bson:"ok"`
+	N         int  `bson:"n"`
+	NModified int  `bson:"nModified"`
 	Upserted  []struct {
-		Index int
+		Index int         `bson:"index"`
 		Id    interface{} `bson:"_id"`
-	}
+	} `bson:"upserted"`
 	ConcernError writeConcernError `bson:"writeConcernError"`
 	Errors       []writeCmdError   `bson:"writeErrors"`
 }
