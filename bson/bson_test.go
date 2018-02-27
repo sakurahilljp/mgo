@@ -34,9 +34,9 @@ import (
 	"errors"
 	"net/url"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
-	"strings"
 
 	"github.com/sakurahilljp/mgo/bson"
 	. "gopkg.in/check.v1"
@@ -229,7 +229,7 @@ func (s *S) TestUnmarshalRawIncompatible(c *C) {
 }
 
 func (s *S) TestUnmarshalZeroesStruct(c *C) {
-	data, err := bson.Marshal(bson.M{"b": 2})
+	data, err := bson.Marshal(bson.M{"B": 2})
 	c.Assert(err, IsNil)
 	type T struct{ A, B int }
 	v := T{A: 1}
@@ -357,7 +357,7 @@ type specSample2 struct {
 
 var structSampleItems = []testItemType{
 	{&specSample1{"world"},
-		"\x16\x00\x00\x00\x02hello\x00\x06\x00\x00\x00world\x00\x00"},
+		"\x16\x00\x00\x00\x02Hello\x00\x06\x00\x00\x00world\x00\x00"},
 	{&specSample2{[]interface{}{"awesome", float64(5.05), 1986}},
 		"1\x00\x00\x00\x04BSON\x00&\x00\x00\x00\x020\x00\x08\x00\x00\x00" +
 			"awesome\x00\x011\x00333333\x14@\x102\x00\xc2\x07\x00\x00\x00\x00"},
@@ -381,9 +381,9 @@ func (s *S) TestUnmarshalStructSampleItems(c *C) {
 func (s *S) Test64bitInt(c *C) {
 	var i int64 = (1 << 31)
 	if int(i) > 0 {
-		data, err := bson.Marshal(bson.M{"i": int(i)})
+		data, err := bson.Marshal(bson.M{"I": int(i)})
 		c.Assert(err, IsNil)
-		c.Assert(string(data), Equals, wrapInDoc("\x12i\x00\x00\x00\x00\x80\x00\x00\x00\x00"))
+		c.Assert(string(data), Equals, wrapInDoc("\x12I\x00\x00\x00\x00\x80\x00\x00\x00\x00"))
 
 		var result struct{ I int }
 		err = bson.Unmarshal(data, &result)
@@ -446,15 +446,15 @@ var prefixval = prefixVal("bar")
 
 var structItems = []testItemType{
 	{&struct{ Ptr *byte }{nil},
-		"\x0Aptr\x00"},
+		"\x0APtr\x00"},
 	{&struct{ Ptr *byte }{&bytevar},
-		"\x10ptr\x00\x08\x00\x00\x00"},
+		"\x10Ptr\x00\x08\x00\x00\x00"},
 	{&struct{ Ptr **byte }{&byteptr},
-		"\x10ptr\x00\x08\x00\x00\x00"},
+		"\x10Ptr\x00\x08\x00\x00\x00"},
 	{&struct{ Byte byte }{8},
-		"\x10byte\x00\x08\x00\x00\x00"},
+		"\x10Byte\x00\x08\x00\x00\x00"},
 	{&struct{ Byte byte }{0},
-		"\x10byte\x00\x00\x00\x00\x00"},
+		"\x10Byte\x00\x00\x00\x00\x00"},
 	{&struct {
 		V byte `bson:"Tag"`
 	}{8},
@@ -464,39 +464,39 @@ var structItems = []testItemType{
 			Byte byte
 		}
 	}{&struct{ Byte byte }{8}},
-		"\x03v\x00" + "\x0f\x00\x00\x00\x10byte\x00\b\x00\x00\x00\x00"},
+		"\x03V\x00" + "\x0f\x00\x00\x00\x10Byte\x00\b\x00\x00\x00\x00"},
 	{&struct{ priv byte }{}, ""},
 
 	// The order of the dumped fields should be the same in the struct.
 	{&struct{ A, C, B, D, F, E *byte }{},
-		"\x0Aa\x00\x0Ac\x00\x0Ab\x00\x0Ad\x00\x0Af\x00\x0Ae\x00"},
+		"\x0AA\x00\x0AC\x00\x0AB\x00\x0AD\x00\x0AF\x00\x0AE\x00"},
 
 	{&struct{ V bson.Raw }{bson.Raw{Kind: 0x03, Data: []byte("\x0f\x00\x00\x00\x10byte\x00\b\x00\x00\x00\x00")}},
-		"\x03v\x00" + "\x0f\x00\x00\x00\x10byte\x00\b\x00\x00\x00\x00"},
+		"\x03V\x00" + "\x0f\x00\x00\x00\x10byte\x00\b\x00\x00\x00\x00"},
 	{&struct{ V bson.Raw }{bson.Raw{Kind: 0x10, Data: []byte("\x00\x00\x00\x00")}},
-		"\x10v\x00" + "\x00\x00\x00\x00"},
+		"\x10V\x00" + "\x00\x00\x00\x00"},
 
 	// Byte arrays.
 	{&struct{ V [2]byte }{[2]byte{'y', 'o'}},
-		"\x05v\x00\x02\x00\x00\x00\x00yo"},
+		"\x05V\x00\x02\x00\x00\x00\x00yo"},
 
 	{&struct{ V prefixPtr }{prefixPtr("buzz")},
-		"\x02v\x00\x09\x00\x00\x00foo-buzz\x00"},
+		"\x02V\x00\x09\x00\x00\x00foo-buzz\x00"},
 
 	{&struct{ V *prefixPtr }{&prefixptr},
-		"\x02v\x00\x08\x00\x00\x00foo-bar\x00"},
+		"\x02V\x00\x08\x00\x00\x00foo-bar\x00"},
 
 	{&struct{ V *prefixPtr }{nil},
-		"\x0Av\x00"},
+		"\x0AV\x00"},
 
 	{&struct{ V prefixVal }{prefixVal("buzz")},
-		"\x02v\x00\x09\x00\x00\x00foo-buzz\x00"},
+		"\x02V\x00\x09\x00\x00\x00foo-buzz\x00"},
 
 	{&struct{ V *prefixVal }{&prefixval},
-		"\x02v\x00\x08\x00\x00\x00foo-bar\x00"},
+		"\x02V\x00\x08\x00\x00\x00foo-bar\x00"},
 
 	{&struct{ V *prefixVal }{nil},
-		"\x0Av\x00"},
+		"\x0AV\x00"},
 }
 
 func (s *S) TestMarshalStructItems(c *C) {
@@ -552,17 +552,17 @@ var marshalItems = []testItemType{
 	{MyD{{Name: "a", Value: nil}, {Name: "c", Value: nil}, {Name: "b", Value: nil}, {Name: "d", Value: nil}, {Name: "f", Value: nil}, {Name: "e", Value: true}},
 		"\x0Aa\x00\x0Ac\x00\x0Ab\x00\x0Ad\x00\x0Af\x00\x08e\x00\x01"},
 	{&dOnIface{bson.D{{Name: "a", Value: nil}, {Name: "c", Value: nil}, {Name: "b", Value: nil}, {Name: "d", Value: true}}},
-		"\x03d\x00" + wrapInDoc("\x0Aa\x00\x0Ac\x00\x0Ab\x00\x08d\x00\x01")},
+		"\x03D\x00" + wrapInDoc("\x0Aa\x00\x0Ac\x00\x0Ab\x00\x08d\x00\x01")},
 
 	{bson.RawD{{Name: "a", Value: bson.Raw{Kind: 0x0A, Data: nil}}, {Name: "c", Value: bson.Raw{Kind: 0x0A, Data: nil}}, {Name: "b", Value: bson.Raw{Kind: 0x08, Data: []byte{0x01}}}},
 		"\x0Aa\x00" + "\x0Ac\x00" + "\x08b\x00\x01"},
 	{MyRawD{{Name: "a", Value: bson.Raw{Kind: 0x0A, Data: nil}}, {Name: "c", Value: bson.Raw{Kind: 0x0A, Data: nil}}, {Name: "b", Value: bson.Raw{Kind: 0x08, Data: []byte{0x01}}}},
 		"\x0Aa\x00" + "\x0Ac\x00" + "\x08b\x00\x01"},
 	{&dOnIface{bson.RawD{{Name: "a", Value: bson.Raw{Kind: 0x0A, Data: nil}}, {Name: "c", Value: bson.Raw{Kind: 0x0A, Data: nil}}, {Name: "b", Value: bson.Raw{Kind: 0x08, Data: []byte{0x01}}}}},
-		"\x03d\x00" + wrapInDoc("\x0Aa\x00"+"\x0Ac\x00"+"\x08b\x00\x01")},
+		"\x03D\x00" + wrapInDoc("\x0Aa\x00"+"\x0Ac\x00"+"\x08b\x00\x01")},
 
 	{&ignoreField{"before", "ignore", "after"},
-		"\x02before\x00\a\x00\x00\x00before\x00\x02after\x00\x06\x00\x00\x00after\x00"},
+		"\x02Before\x00\a\x00\x00\x00before\x00\x02After\x00\x06\x00\x00\x00after\x00"},
 
 	// Marshalling a Raw document does nothing.
 	{bson.Raw{Kind: 0x03, Data: []byte(wrapInDoc("anything"))},
@@ -588,18 +588,18 @@ var unmarshalItems = []testItemType{
 		"\x10priv\x00\x08\x00\x00\x00"},
 
 	// Wrong casing. Field names are lowercased.
-	{&struct{ Byte byte }{},
+	{&struct{ Byte byte }{8},
 		"\x10Byte\x00\x08\x00\x00\x00"},
 
 	// Ignore non-existing field.
 	{&struct{ Byte byte }{9},
-		"\x10boot\x00\x08\x00\x00\x00" + "\x10byte\x00\x09\x00\x00\x00"},
+		"\x10boot\x00\x08\x00\x00\x00" + "\x10Byte\x00\x09\x00\x00\x00"},
 
 	// Do not unmarshal on ignored field.
 	{&ignoreField{"before", "", "after"},
-		"\x02before\x00\a\x00\x00\x00before\x00" +
+		"\x02Before\x00\a\x00\x00\x00before\x00" +
 			"\x02-\x00\a\x00\x00\x00ignore\x00" +
-			"\x02after\x00\x06\x00\x00\x00after\x00"},
+			"\x02After\x00\x06\x00\x00\x00after\x00"},
 
 	// Ignore unsuitable types silently.
 	{map[string]string{"str": "s"},
@@ -609,13 +609,13 @@ var unmarshalItems = []testItemType{
 
 	// Wrong type. Shouldn't init pointer.
 	{&struct{ Str *byte }{},
-		"\x02str\x00\x02\x00\x00\x00s\x00"},
+		"\x02Str\x00\x02\x00\x00\x00s\x00"},
 	{&struct{ Str *struct{ Str string } }{},
-		"\x02str\x00\x02\x00\x00\x00s\x00"},
+		"\x02Str\x00\x02\x00\x00\x00s\x00"},
 
 	// Ordered document.
 	{&struct{ bson.D }{bson.D{{Name: "a", Value: nil}, {Name: "c", Value: nil}, {Name: "b", Value: nil}, {Name: "d", Value: true}}},
-		"\x03d\x00" + wrapInDoc("\x0Aa\x00\x0Ac\x00\x0Ab\x00\x08d\x00\x01")},
+		"\x03D\x00" + wrapInDoc("\x0Aa\x00\x0Ac\x00\x0Ab\x00\x08d\x00\x01")},
 
 	// Raw document.
 	{&bson.Raw{Kind: 0x03, Data: []byte(wrapInDoc("\x10byte\x00\x08\x00\x00\x00"))},
@@ -623,7 +623,7 @@ var unmarshalItems = []testItemType{
 
 	// RawD document.
 	{&struct{ bson.RawD }{bson.RawD{{Name: "a", Value: bson.Raw{Kind: 0x0A, Data: []byte{}}}, {Name: "c", Value: bson.Raw{Kind: 0x0A, Data: []byte{}}}, {Name: "b", Value: bson.Raw{Kind: 0x08, Data: []byte{0x01}}}}},
-		"\x03rawd\x00" + wrapInDoc("\x0Aa\x00\x0Ac\x00\x08b\x00\x01")},
+		"\x03RawD\x00" + wrapInDoc("\x0Aa\x00\x0Ac\x00\x08b\x00\x01")},
 
 	// Decode old binary.
 	{bson.M{"_": []byte("old")},
@@ -648,7 +648,7 @@ func (s *S) TestUnmarshalNilInStruct(c *C) {
 	// Nil is the default value, so we need to ensure it's indeed being set.
 	b := byte(1)
 	v := &struct{ Ptr *byte }{&b}
-	err := bson.Unmarshal([]byte(wrapInDoc("\x0Aptr\x00")), v)
+	err := bson.Unmarshal([]byte(wrapInDoc("\x0APtr\x00")), v)
 	c.Assert(err, IsNil)
 	c.Assert(v, DeepEquals, &struct{ Ptr *byte }{nil})
 }
@@ -658,7 +658,7 @@ func (s *S) TestUnmarshalNilInStruct(c *C) {
 
 type structWithDupKeys struct {
 	Name  byte
-	Other byte `bson:"name"` // Tag should precede.
+	Other byte `bson:"Name"` // Tag should precede.
 }
 
 var marshalErrorItems = []testItemType{
@@ -671,7 +671,7 @@ var marshalErrorItems = []testItemType{
 	{bson.M{"": 1i},
 		"Can't marshal complex128 in a BSON document"},
 	{&structWithDupKeys{},
-		"Duplicated key 'name' in struct bson_test.structWithDupKeys"},
+		"Duplicated key 'Name' in struct bson_test.structWithDupKeys"},
 	{bson.Raw{Kind: 0xA, Data: []byte{}},
 		"Attempted to marshal Raw kind 10 as a document"},
 	{bson.Raw{Kind: 0x3, Data: []byte{}},
@@ -681,13 +681,13 @@ var marshalErrorItems = []testItemType{
 	{&inlineCantPtr{&struct{ A, B int }{1, 2}},
 		"Option ,inline needs a struct value or map field"},
 	{&inlineDupName{1, struct{ A, B int }{2, 3}},
-		"Duplicated key 'a' in struct bson_test.inlineDupName"},
+		"Duplicated key 'A' in struct bson_test.inlineDupName"},
 	{&inlineDupMap{},
 		"Multiple ,inline maps in struct bson_test.inlineDupMap"},
 	{&inlineBadKeyMap{},
 		"Option ,inline needs a map with string keys in struct bson_test.inlineBadKeyMap"},
-	{&inlineMap{A: 1, M: map[string]interface{}{"a": 1}},
-		`Can't have key "a" in inlined map; conflicts with struct field`},
+	{&inlineMap{A: 1, M: map[string]interface{}{"A": 1}},
+		`Can't have key "A" in inlined map; conflicts with struct field`},
 }
 
 func (s *S) TestMarshalErrorItems(c *C) {
@@ -710,8 +710,8 @@ type unmarshalErrorType struct {
 var unmarshalErrorItems = []unmarshalErrorType{
 	// Tag name conflicts with existing parameter.
 	{&structWithDupKeys{},
-		"\x10name\x00\x08\x00\x00\x00",
-		"Duplicated key 'name' in struct bson_test.structWithDupKeys"},
+		"\x10Name\x00\x08\x00\x00\x00",
+		"Duplicated key 'Name' in struct bson_test.structWithDupKeys"},
 
 	// Non-string map key.
 	{map[int]interface{}{},
@@ -762,7 +762,7 @@ var unmarshalRawErrorItems = []unmarshalRawErrorType{
 	// Tag name conflicts with existing parameter.
 	{&structWithDupKeys{},
 		bson.Raw{Kind: 0x03, Data: []byte("\x10byte\x00\x08\x00\x00\x00")},
-		"Duplicated key 'name' in struct bson_test.structWithDupKeys"},
+		"Duplicated key 'Name' in struct bson_test.structWithDupKeys"},
 
 	{&struct{}{},
 		bson.Raw{Kind: 0xEE, Data: []byte{}},
@@ -1026,7 +1026,7 @@ func (s *S) TestMarshalShortWithGetter(c *C) {
 	m := bson.M{}
 	err = bson.Unmarshal(data, m)
 	c.Assert(err, IsNil)
-	c.Assert(m["v"], Equals, 42)
+	c.Assert(m["V"], Equals, 42)
 }
 
 func (s *S) TestMarshalWithGetterNil(c *C) {
@@ -1163,7 +1163,7 @@ func (s *getterSetterD) SetBSON(raw bson.Raw) error {
 type getterSetterInt int
 
 func (i getterSetterInt) GetBSON() (interface{}, error) {
-	return bson.D{{Name: "a", Value: int(i)}}, nil
+	return bson.D{{Name: "A", Value: int(i)}}, nil
 }
 
 func (i *getterSetterInt) SetBSON(raw bson.Raw) error {
@@ -1292,119 +1292,119 @@ var twoWayCrossItems = []crossTypeItem{
 			B, C int
 		}
 	}{struct{ B, C int }{1, 2}},
-		map[string]map[string]int{"a": {"b": 1, "c": 2}}},
+		map[string]map[string]int{"A": {"B": 1, "C": 2}}},
 
-	{&struct{ A bson.Symbol }{"abc"}, map[string]string{"a": "abc"}},
-	{&struct{ A bson.Symbol }{"abc"}, map[string][]byte{"a": []byte("abc")}},
-	{&struct{ A []byte }{[]byte("abc")}, map[string]string{"a": "abc"}},
-	{&struct{ A uint }{42}, map[string]int{"a": 42}},
-	{&struct{ A uint }{42}, map[string]float64{"a": 42}},
-	{&struct{ A uint }{1}, map[string]bool{"a": true}},
-	{&struct{ A int }{42}, map[string]uint{"a": 42}},
-	{&struct{ A int }{42}, map[string]float64{"a": 42}},
-	{&struct{ A int }{1}, map[string]bool{"a": true}},
-	{&struct{ A float64 }{42}, map[string]float32{"a": 42}},
-	{&struct{ A float64 }{42}, map[string]int{"a": 42}},
-	{&struct{ A float64 }{42}, map[string]uint{"a": 42}},
-	{&struct{ A float64 }{1}, map[string]bool{"a": true}},
-	{&struct{ A bool }{true}, map[string]int{"a": 1}},
-	{&struct{ A bool }{true}, map[string]uint{"a": 1}},
-	{&struct{ A bool }{true}, map[string]float64{"a": 1}},
-	{&struct{ A **byte }{&byteptr}, map[string]byte{"a": 8}},
+	{&struct{ A bson.Symbol }{"abc"}, map[string]string{"A": "abc"}},
+	{&struct{ A bson.Symbol }{"abc"}, map[string][]byte{"A": []byte("abc")}},
+	{&struct{ A []byte }{[]byte("abc")}, map[string]string{"A": "abc"}},
+	{&struct{ A uint }{42}, map[string]int{"A": 42}},
+	{&struct{ A uint }{42}, map[string]float64{"A": 42}},
+	{&struct{ A uint }{1}, map[string]bool{"A": true}},
+	{&struct{ A int }{42}, map[string]uint{"A": 42}},
+	{&struct{ A int }{42}, map[string]float64{"A": 42}},
+	{&struct{ A int }{1}, map[string]bool{"A": true}},
+	{&struct{ A float64 }{42}, map[string]float32{"A": 42}},
+	{&struct{ A float64 }{42}, map[string]int{"A": 42}},
+	{&struct{ A float64 }{42}, map[string]uint{"A": 42}},
+	{&struct{ A float64 }{1}, map[string]bool{"A": true}},
+	{&struct{ A bool }{true}, map[string]int{"A": 1}},
+	{&struct{ A bool }{true}, map[string]uint{"A": 1}},
+	{&struct{ A bool }{true}, map[string]float64{"A": 1}},
+	{&struct{ A **byte }{&byteptr}, map[string]byte{"A": 8}},
 
 	// url.URL <=> string
-	{&struct{ URL *url.URL }{parseURL("h://e.c/p")}, map[string]string{"url": "h://e.c/p"}},
-	{&struct{ URL url.URL }{*parseURL("h://e.c/p")}, map[string]string{"url": "h://e.c/p"}},
+	{&struct{ URL *url.URL }{parseURL("h://e.c/p")}, map[string]string{"URL": "h://e.c/p"}},
+	{&struct{ URL url.URL }{*parseURL("h://e.c/p")}, map[string]string{"URL": "h://e.c/p"}},
 
 	// Slices
-	{&struct{ S []int }{[]int{1, 2, 3}}, map[string][]int{"s": {1, 2, 3}}},
-	{&struct{ S *[]int }{&[]int{1, 2, 3}}, map[string][]int{"s": {1, 2, 3}}},
+	{&struct{ S []int }{[]int{1, 2, 3}}, map[string][]int{"S": {1, 2, 3}}},
+	{&struct{ S *[]int }{&[]int{1, 2, 3}}, map[string][]int{"S": {1, 2, 3}}},
 
 	// Conditionals
-	{&condBool{true}, map[string]bool{"v": true}},
+	{&condBool{true}, map[string]bool{"V": true}},
 	{&condBool{}, map[string]bool{}},
-	{&condInt{1}, map[string]int{"v": 1}},
+	{&condInt{1}, map[string]int{"V": 1}},
 	{&condInt{}, map[string]int{}},
-	{&condUInt{1}, map[string]uint{"v": 1}},
+	{&condUInt{1}, map[string]uint{"V": 1}},
 	{&condUInt{}, map[string]uint{}},
 	{&condFloat{}, map[string]int{}},
-	{&condStr{"yo"}, map[string]string{"v": "yo"}},
+	{&condStr{"yo"}, map[string]string{"V": "yo"}},
 	{&condStr{}, map[string]string{}},
-	{&condStrNS{"yo"}, map[string]string{"v": "yo"}},
+	{&condStrNS{"yo"}, map[string]string{"V": "yo"}},
 	{&condStrNS{}, map[string]string{}},
-	{&condSlice{[]string{"yo"}}, map[string][]string{"v": {"yo"}}},
+	{&condSlice{[]string{"yo"}}, map[string][]string{"V": {"yo"}}},
 	{&condSlice{}, map[string][]string{}},
-	{&condMap{map[string]int{"k": 1}}, bson.M{"v": bson.M{"k": 1}}},
+	{&condMap{map[string]int{"k": 1}}, bson.M{"V": bson.M{"k": 1}}},
 	{&condMap{}, map[string][]string{}},
-	{&condIface{"yo"}, map[string]string{"v": "yo"}},
-	{&condIface{""}, map[string]string{"v": ""}},
+	{&condIface{"yo"}, map[string]string{"V": "yo"}},
+	{&condIface{""}, map[string]string{"V": ""}},
 	{&condIface{}, map[string]string{}},
-	{&condPtr{&truevar}, map[string]bool{"v": true}},
-	{&condPtr{&falsevar}, map[string]bool{"v": false}},
+	{&condPtr{&truevar}, map[string]bool{"V": true}},
+	{&condPtr{&falsevar}, map[string]bool{"V": false}},
 	{&condPtr{}, map[string]string{}},
 
-	{&condTime{time.Unix(123456789, 123e6).UTC()}, map[string]time.Time{"v": time.Unix(123456789, 123e6).UTC()}},
+	{&condTime{time.Unix(123456789, 123e6).UTC()}, map[string]time.Time{"V": time.Unix(123456789, 123e6).UTC()}},
 	{&condTime{}, map[string]string{}},
 
-	{&condStruct{struct{ A []int }{[]int{1}}}, bson.M{"v": bson.M{"a": []interface{}{1}}}},
+	{&condStruct{struct{ A []int }{[]int{1}}}, bson.M{"V": bson.M{"A": []interface{}{1}}}},
 	{&condStruct{struct{ A []int }{}}, bson.M{}},
 
-	{&condRaw{bson.Raw{Kind: 0x0A, Data: []byte{}}}, bson.M{"v": nil}},
+	{&condRaw{bson.Raw{Kind: 0x0A, Data: []byte{}}}, bson.M{"V": nil}},
 	{&condRaw{bson.Raw{Kind: 0x00}}, bson.M{}},
 
 	{&namedCondStr{"yo"}, map[string]string{"myv": "yo"}},
 	{&namedCondStr{}, map[string]string{}},
 
-	{&shortInt{1}, map[string]interface{}{"v": 1}},
-	{&shortInt{1 << 30}, map[string]interface{}{"v": 1 << 30}},
-	{&shortInt{1 << 31}, map[string]interface{}{"v": int64(1 << 31)}},
-	{&shortUint{1 << 30}, map[string]interface{}{"v": 1 << 30}},
-	{&shortUint{1 << 31}, map[string]interface{}{"v": int64(1 << 31)}},
-	{&shortIface{int64(1) << 31}, map[string]interface{}{"v": int64(1 << 31)}},
-	{&shortPtr{int64ptr}, map[string]interface{}{"v": intvar}},
+	{&shortInt{1}, map[string]interface{}{"V": 1}},
+	{&shortInt{1 << 30}, map[string]interface{}{"V": 1 << 30}},
+	{&shortInt{1 << 31}, map[string]interface{}{"V": int64(1 << 31)}},
+	{&shortUint{1 << 30}, map[string]interface{}{"V": 1 << 30}},
+	{&shortUint{1 << 31}, map[string]interface{}{"V": int64(1 << 31)}},
+	{&shortIface{int64(1) << 31}, map[string]interface{}{"V": int64(1 << 31)}},
+	{&shortPtr{int64ptr}, map[string]interface{}{"V": intvar}},
 
-	{&shortNonEmptyInt{1}, map[string]interface{}{"v": 1}},
-	{&shortNonEmptyInt{1 << 31}, map[string]interface{}{"v": int64(1 << 31)}},
+	{&shortNonEmptyInt{1}, map[string]interface{}{"V": 1}},
+	{&shortNonEmptyInt{1 << 31}, map[string]interface{}{"V": int64(1 << 31)}},
 	{&shortNonEmptyInt{}, map[string]interface{}{}},
 
-	{&inlineInt{struct{ A, B int }{1, 2}}, map[string]interface{}{"a": 1, "b": 2}},
-	{&inlineMap{A: 1, M: map[string]interface{}{"b": 2}}, map[string]interface{}{"a": 1, "b": 2}},
-	{&inlineMap{A: 1, M: nil}, map[string]interface{}{"a": 1}},
-	{&inlineMapInt{A: 1, M: map[string]int{"b": 2}}, map[string]int{"a": 1, "b": 2}},
-	{&inlineMapInt{A: 1, M: nil}, map[string]int{"a": 1}},
-	{&inlineMapMyM{A: 1, M: MyM{"b": MyM{"c": 3}}}, map[string]interface{}{"a": 1, "b": map[string]interface{}{"c": 3}}},
-	{&inlineUnexported{M: map[string]interface{}{"b": 1}, unexported: unexported{A: 2}}, map[string]interface{}{"b": 1, "a": 2}},
+	{&inlineInt{struct{ A, B int }{1, 2}}, map[string]interface{}{"A": 1, "B": 2}},
+	{&inlineMap{A: 1, M: map[string]interface{}{"b": 2}}, map[string]interface{}{"A": 1, "b": 2}},
+	{&inlineMap{A: 1, M: nil}, map[string]interface{}{"A": 1}},
+	{&inlineMapInt{A: 1, M: map[string]int{"b": 2}}, map[string]int{"A": 1, "b": 2}},
+	{&inlineMapInt{A: 1, M: nil}, map[string]int{"A": 1}},
+	{&inlineMapMyM{A: 1, M: MyM{"b": MyM{"c": 3}}}, map[string]interface{}{"A": 1, "b": map[string]interface{}{"c": 3}}},
+	{&inlineUnexported{M: map[string]interface{}{"b": 1}, unexported: unexported{A: 2}}, map[string]interface{}{"b": 1, "A": 2}},
 
 	// []byte <=> Binary
-	{&struct{ B []byte }{[]byte("abc")}, map[string]bson.Binary{"b": {Data: []byte("abc")}}},
+	{&struct{ B []byte }{[]byte("abc")}, map[string]bson.Binary{"B": {Data: []byte("abc")}}},
 
 	// []byte <=> MyBytes
-	{&struct{ B MyBytes }{[]byte("abc")}, map[string]string{"b": "abc"}},
-	{&struct{ B MyBytes }{[]byte{}}, map[string]string{"b": ""}},
+	{&struct{ B MyBytes }{[]byte("abc")}, map[string]string{"B": "abc"}},
+	{&struct{ B MyBytes }{[]byte{}}, map[string]string{"B": ""}},
 	{&struct{ B MyBytes }{}, map[string]bool{}},
-	{&struct{ B []byte }{[]byte("abc")}, map[string]MyBytes{"b": []byte("abc")}},
+	{&struct{ B []byte }{[]byte("abc")}, map[string]MyBytes{"B": []byte("abc")}},
 
 	// bool <=> MyBool
-	{&struct{ B MyBool }{true}, map[string]bool{"b": true}},
-	{&struct{ B MyBool }{}, map[string]bool{"b": false}},
+	{&struct{ B MyBool }{true}, map[string]bool{"B": true}},
+	{&struct{ B MyBool }{}, map[string]bool{"B": false}},
 	{&struct{ B MyBool }{}, map[string]string{}},
-	{&struct{ B bool }{}, map[string]MyBool{"b": false}},
+	{&struct{ B bool }{}, map[string]MyBool{"B": false}},
 
 	// arrays
-	{&struct{ V [2]int }{[...]int{1, 2}}, map[string][2]int{"v": {1, 2}}},
-	{&struct{ V [2]byte }{[...]byte{1, 2}}, map[string][2]byte{"v": {1, 2}}},
+	{&struct{ V [2]int }{[...]int{1, 2}}, map[string][2]int{"V": {1, 2}}},
+	{&struct{ V [2]byte }{[...]byte{1, 2}}, map[string][2]byte{"V": {1, 2}}},
 
 	// zero time
-	{&struct{ V time.Time }{}, map[string]interface{}{"v": time.Time{}}},
+	{&struct{ V time.Time }{}, map[string]interface{}{"V": time.Time{}}},
 
 	// zero time + 1 second + 1 millisecond; overflows int64 as nanoseconds
 	{&struct{ V time.Time }{time.Unix(-62135596799, 1e6).UTC()},
-		map[string]interface{}{"v": time.Unix(-62135596799, 1e6).UTC()}},
+		map[string]interface{}{"V": time.Unix(-62135596799, 1e6).UTC()}},
 
 	// bson.D <=> []DocElem
 	{&bson.D{{Name: "a", Value: bson.D{{Name: "b", Value: 1}, {Name: "c", Value: 2}}}}, &bson.D{{Name: "a", Value: bson.D{{Name: "b", Value: 1}, {Name: "c", Value: 2}}}}},
 	{&bson.D{{Name: "a", Value: bson.D{{Name: "b", Value: 1}, {Name: "c", Value: 2}}}}, &MyD{{Name: "a", Value: MyD{{Name: "b", Value: 1}, {Name: "c", Value: 2}}}}},
-	{&struct{ V MyD }{MyD{{Name: "a", Value: 1}}}, &bson.D{{Name: "v", Value: bson.D{{Name: "a", Value: 1}}}}},
+	{&struct{ V MyD }{MyD{{Name: "a", Value: 1}}}, &bson.D{{Name: "V", Value: bson.D{{Name: "a", Value: 1}}}}},
 
 	// bson.RawD <=> []RawDocElem
 	{&bson.RawD{{Name: "a", Value: bson.Raw{Kind: 0x08, Data: []byte{0x01}}}}, &bson.RawD{{Name: "a", Value: bson.Raw{Kind: 0x08, Data: []byte{0x01}}}}},
@@ -1418,16 +1418,16 @@ var twoWayCrossItems = []crossTypeItem{
 	{bson.M{"a": bson.M{"b": 1, "c": 2}}, map[MyString]interface{}{"a": map[MyString]interface{}{"b": 1, "c": 2}}},
 
 	// json.Number <=> int64, float64
-	{&struct{ N json.Number }{"5"}, map[string]interface{}{"n": int64(5)}},
-	{&struct{ N json.Number }{"5.05"}, map[string]interface{}{"n": 5.05}},
-	{&struct{ N json.Number }{"9223372036854776000"}, map[string]interface{}{"n": float64(1 << 63)}},
+	{&struct{ N json.Number }{"5"}, map[string]interface{}{"N": int64(5)}},
+	{&struct{ N json.Number }{"5.05"}, map[string]interface{}{"N": 5.05}},
+	{&struct{ N json.Number }{"9223372036854776000"}, map[string]interface{}{"N": float64(1 << 63)}},
 
 	// bson.D <=> non-struct getter/setter
 	{&bson.D{{Name: "a", Value: 1}}, &getterSetterD{{Name: "a", Value: 1}, {Name: "suffix", Value: true}}},
-	{&bson.D{{Name: "a", Value: 42}}, &gsintvar},
+	{&bson.D{{Name: "A", Value: 42}}, &gsintvar},
 
 	// Interface slice setter.
-	{&struct{ V ifaceSlice }{ifaceSlice{nil, nil, nil}}, bson.M{"v": []interface{}{3}}},
+	{&struct{ V ifaceSlice }{ifaceSlice{nil, nil, nil}}, bson.M{"V": []interface{}{3}}},
 }
 
 // Same thing, but only one way (obj1 => obj2).
@@ -1436,13 +1436,13 @@ var oneWayCrossItems = []crossTypeItem{
 	{map[string]interface{}{"a": 1, "b": "2", "c": 3}, map[string]int{"a": 1, "c": 3}},
 
 	// inline map elides badly typed values
-	{map[string]interface{}{"a": 1, "b": "2", "c": 3}, &inlineMapInt{A: 1, M: map[string]int{"c": 3}}},
+	{map[string]interface{}{"A": 1, "b": "2", "c": 3}, &inlineMapInt{A: 1, M: map[string]int{"c": 3}}},
 
 	// Can't decode int into struct.
 	{bson.M{"a": bson.M{"b": 2}}, &struct{ A bool }{}},
 
 	// Would get decoded into a int32 too in the opposite direction.
-	{&shortIface{int64(1) << 30}, map[string]interface{}{"v": 1 << 30}},
+	{&shortIface{int64(1) << 30}, map[string]interface{}{"V": 1 << 30}},
 
 	// Ensure omitempty on struct with private fields works properly.
 	{&struct {

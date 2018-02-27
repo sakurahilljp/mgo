@@ -37,7 +37,7 @@ func (s *S) TestTaggingFallback(c *C) {
 	c.Assert(errUnmarshal, IsNil)
 
 	// No tag, so standard naming
-	_, firstExists := target["first"]
+	_, firstExists := target["First"]
 	c.Assert(firstExists, Equals, true)
 
 	// Just a BSON tag
