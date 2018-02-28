@@ -111,7 +111,7 @@ type Session struct {
 //
 //    https://docs.mongodb.com/manual/core/databases-and-collections/#databases
 //
-type Database struct {
+type Database struct { // bson notation
 	Session *Session `bson:"session"`
 	Name    string   `bson:"name"`
 }
@@ -122,7 +122,7 @@ type Database struct {
 //
 //    https://docs.mongodb.com/manual/core/databases-and-collections/#collections
 //
-type Collection struct {
+type Collection struct { // bson notation
 	Database *Database `bson:"database"`
 	Name     string    `bson:"name"`     // "collection"
 	FullName string    `bson:"fullname"` // "db.collection"
@@ -141,7 +141,7 @@ type query struct {
 	limit    int32
 }
 
-type getLastError struct {
+type getLastError struct { // bson notation
 	CmdName  int         `bson:"getLastError,omitempty"`
 	W        interface{} `bson:"w,omitempty"`
 	WTimeout int         `bson:"wtimeout,omitempty"`
@@ -947,14 +947,14 @@ func (s *Session) LogoutAll() {
 //     http://docs.mongodb.org/manual/reference/privilege-documents/
 //     http://docs.mongodb.org/manual/reference/user-privileges/
 //
-type User struct {
+type User struct { // bson notation
 	// Username is how the user identifies itself to the system.
 	Username string `bson:"user"`
 
 	// Password is the plaintext password for the user. If set,
 	// the UpsertUser method will hash it into PasswordHash and
 	// unset it before the user is added to the database.
-	Password string `bson:",omitempty"`
+	Password string `bson:"password,omitempty"`
 
 	// PasswordHash is the MD5 hash of Username+":mongo:"+Password.
 	PasswordHash string `bson:"pwd,omitempty"`
@@ -1200,7 +1200,7 @@ func (db *Database) RemoveUser(user string) error {
 	return err
 }
 
-type indexSpec struct {
+type indexSpec struct { // bson notation
 	Name                    string  `bson:"name"`
 	NS                      string  `bson:"ns"`
 	Key                     bson.D  `bson:"key"`
@@ -1227,7 +1227,7 @@ type indexSpec struct {
 // field or set of fields, ordered by the value of the field. The ordering of the
 // index entries supports efficient equality matches and range-based query operations.
 // In addition, MongoDB can return sorted results by using the ordering in the index.
-type Index struct {
+type Index struct { // bson notation
 	Key           []string `bson:"key"`           // Index key fields; prefix name with dash (-) for descending order
 	Unique        bool     `bson:"unique"`        // Prevent two documents from having the same index key
 	DropDups      bool     `bson:"dropdups"`      // Drop documents with the same index key as a previously indexed one
@@ -1271,7 +1271,7 @@ type Index struct {
 
 // Collation allows users to specify language-specific rules for string comparison,
 // such as rules for lettercase and accent marks.
-type Collation struct {
+type Collation struct { // bson notation
 
 	// Locale defines the collation locale.
 	Locale string `bson:"locale"`
@@ -1585,7 +1585,7 @@ func (c *Collection) DropIndex(key ...string) error {
 	session.SetMode(Strong, false)
 
 	db := c.Database.With(session)
-	result := struct {
+	result := struct { // bson notation
 		ErrMsg string `bson:"errmsg"`
 		Ok     bool   `bson:"ok"`
 	}{}
@@ -1637,7 +1637,7 @@ func (c *Collection) DropIndexName(name string) error {
 		session.cluster().CacheIndex(cacheKey, false)
 	}
 
-	result := struct {
+	result := struct { // bson notation
 		ErrMsg string `bson:"errmsg"`
 		Ok     bool   `bson:"ok"`
 	}{}
@@ -1660,7 +1660,7 @@ func (c *Collection) DropAllIndexes() error {
 	defer session.Close()
 
 	db := c.Database.With(session)
-	result := struct {
+	result := struct { // bson notation
 		ErrMsg string `bson:"errmsg"`
 		Ok     bool   `bson:"ok"`
 	}{}
@@ -1695,7 +1695,7 @@ func (c *Collection) Indexes() (indexes []Index, err error) {
 	batchSize := int(cloned.queryConfig.op.limit)
 
 	// Try with a command.
-	var result struct {
+	var result struct { // bson notation
 		Indexes []bson.Raw `bson:"indexes"`
 		Cursor  cursorData `bson:"cursor"`
 	}
@@ -2378,12 +2378,12 @@ func (c *Collection) Find(query interface{}) *Query {
 	return q
 }
 
-type repairCmd struct {
+type repairCmd struct { // bson notation
 	RepairCursor string           `bson:"repairCursor"`
 	Cursor       *repairCmdCursor `bson:"cursor,omitempty"`
 }
 
-type repairCmdCursor struct {
+type repairCmdCursor struct { // bson notation
 	BatchSize int `bson:"batchSize,omitempty"`
 }
 
@@ -2403,7 +2403,7 @@ func (c *Collection) Repair() *Iter {
 
 	batchSize := int(cloned.queryConfig.op.limit)
 
-	var result struct {
+	var result struct { // bson notation
 		Cursor cursorData `bson:"cursor"`
 	}
 
@@ -2437,7 +2437,7 @@ type Pipe struct {
 	maxTimeMS  int64
 }
 
-type pipeCmd struct {
+type pipeCmd struct { // bson notation
 	Aggregate string         `bson:"aggregate"`
 	Pipeline  interface{}    `bson:"pipeline"`
 	Cursor    *pipeCmdCursor `bson:"cursor,omitempty"`
@@ -2446,7 +2446,7 @@ type pipeCmd struct {
 	MaxTimeMS int64          `bson:"maxTimeMS,omitempty"`
 }
 
-type pipeCmdCursor struct {
+type pipeCmdCursor struct { // bson notation
 	BatchSize int `bson:"batchSize,omitempty"`
 }
 
@@ -2487,7 +2487,7 @@ func (p *Pipe) Iter() *Iter {
 	defer cloned.Close()
 	c := p.collection.With(cloned)
 
-	var result struct {
+	var result struct { // bson notation
 		Result []bson.Raw `bson:"result"` // 2.4, no cursors.
 		Cursor cursorData `bson:"cursor"` // 2.6+, with cursors.
 	}
@@ -2693,7 +2693,7 @@ func (p *Pipe) SetMaxTime(d time.Duration) *Pipe {
 //    https://docs.mongodb.com/manual/reference/command/getLastError/
 //
 // mgo.v3: Use a single user-visible error type.
-type LastError struct {
+type LastError struct { // bson notation
 	Err             string      `bson:"err"`
 	Code            int         `bson:"code"`
 	N               int         `bson:"n"`
@@ -2711,7 +2711,7 @@ func (err *LastError) Error() string {
 	return err.Err
 }
 
-type queryError struct {
+type queryError struct { // bson notation
 	Err           string `bson:"$err"`
 	ErrMsg        string `bson:"errmsg"`
 	Assertion     string `bson:"assertion"`
@@ -2720,7 +2720,7 @@ type queryError struct {
 }
 
 // QueryError is returned when a query fails
-type QueryError struct {
+type QueryError struct { // bson notation
 	Code      int    `bson:"code"`
 	Message   string `bson:"message"`
 	Assertion bool   `bson:"assertion"`
@@ -2798,7 +2798,7 @@ func (c *Collection) UpdateId(id interface{}, update interface{}) error {
 }
 
 // ChangeInfo holds details about the outcome of an update operation.
-type ChangeInfo struct {
+type ChangeInfo struct { //bson notation
 	// Updated reports the number of existing documents modified.
 	// Due to server limitations, this reports the same value as the Matched field when
 	// talking to MongoDB <= 2.4 and on Upsert and Apply (findAndModify) operations.
@@ -3467,7 +3467,7 @@ func (q *Query) One(result interface{}) (err error) {
 		return ErrNotFound
 	}
 	if expectFindReply {
-		var findReply struct {
+		var findReply struct { // bson notation
 			Ok     bool       `bson:"ok"`
 			Code   int        `bson:"code"`
 			Errmsg string     `bson:"errmsg"`
@@ -3554,7 +3554,7 @@ func prepareFindOp(socket *mongoSocket, op *queryOp, limit int32) bool {
 	return true
 }
 
-type cursorData struct {
+type cursorData struct { // bson notation
 	FirstBatch []bson.Raw `bson:"firstBatch"`
 	NextBatch  []bson.Raw `bson:"nextBatch"`
 	NS         string     `bson:"ns"`
@@ -3567,7 +3567,7 @@ type cursorData struct {
 //
 //     https://docs.mongodb.org/master/reference/command/find/#dbcmd.find
 //
-type findCmd struct {
+type findCmd struct { // bson notation
 	Collection          string      `bson:"find"`
 	Filter              interface{} `bson:"filter,omitempty"`
 	Sort                interface{} `bson:"sort,omitempty"`
@@ -3596,7 +3596,7 @@ type findCmd struct {
 
 // readLevel provides the nested "level: majority" serialisation needed for the
 // query read concern.
-type readLevel struct {
+type readLevel struct { // bson notation
 	level string `bson:"level,omitempty"`
 }
 
@@ -3606,7 +3606,7 @@ type readLevel struct {
 //
 //     https://docs.mongodb.org/master/reference/command/getMore/#dbcmd.getMore
 //
-type getMoreCmd struct {
+type getMoreCmd struct { // bson notation
 	CursorId   int64  `bson:"getMore"`
 	Collection string `bson:"collection"`
 	BatchSize  int32  `bson:"batchSize,omitempty"`
@@ -3668,7 +3668,7 @@ func (db *Database) run(socket *mongoSocket, cmd, result interface{}) (err error
 //
 //     http://www.mongodb.org/display/DOCS/Database+References
 //
-type DBRef struct {
+type DBRef struct { // bson notation
 	Collection string      `bson:"$ref"`
 	Id         interface{} `bson:"$id"`
 	Database   string      `bson:"$db,omitempty"`
@@ -3725,7 +3725,7 @@ func (db *Database) CollectionNames() (names []string, err error) {
 	batchSize := int(cloned.queryConfig.op.limit)
 
 	// Try with a command.
-	var result struct {
+	var result struct { // bson notation
 		Collections []bson.Raw `bson:"collections"`
 		Cursor      cursorData `bson:"cursor"`
 	}
@@ -3742,7 +3742,7 @@ func (db *Database) CollectionNames() (names []string, err error) {
 		} else {
 			iter = cloned.DB(ns[0]).C(ns[1]).NewIter(nil, firstBatch, result.Cursor.Id, nil)
 		}
-		var coll struct {
+		var coll struct { // bson notation
 			Name string `bson:"name"`
 		}
 		for iter.Next(&coll) {
@@ -3761,7 +3761,7 @@ func (db *Database) CollectionNames() (names []string, err error) {
 	// Command not yet supported. Query the database instead.
 	nameIndex := len(db.Name) + 1
 	iter := db.C("system.namespaces").Find(nil).Iter()
-	var coll struct {
+	var coll struct { // bson notation
 		Name string `bson:"name"`
 	}
 	for iter.Next(&coll) {
@@ -3776,7 +3776,7 @@ func (db *Database) CollectionNames() (names []string, err error) {
 	return names, nil
 }
 
-type dbNames struct {
+type dbNames struct { // bson notation
 	Databases []struct {
 		Name  string `bson:"name"`
 		Empty bool   `bson:"empty"`
@@ -4341,7 +4341,7 @@ func (iter *Iter) getMoreCmd() *queryOp {
 	return &op
 }
 
-type countCmd struct {
+type countCmd struct { // bson notation
 	Count     string      `bson:"count"`
 	Query     interface{} `bson:"query"`
 	Limit     int32       `bson:"limit,omitempty"`
@@ -4372,7 +4372,7 @@ func (q *Query) Count() (n int, err error) {
 	// not checking the error because if type assertion fails, we
 	// simply want a Zero bson.D
 	hint, _ := q.op.options.Hint.(bson.D)
-	result := struct {
+	result := struct { // bson notation
 		N int `bson:"n"`
 	}{}
 	err = session.DB(dbname).Run(countCmd{cname, query, limit, op.skip, hint, op.options.MaxTimeMS}, &result)
@@ -4385,7 +4385,7 @@ func (c *Collection) Count() (n int, err error) {
 	return c.Find(nil).Count()
 }
 
-type distinctCmd struct {
+type distinctCmd struct { // bson notation
 	Collection string      `bson:"distinct"`
 	Key        string      `bson:"key"`
 	Query      interface{} `bson:"query,omitempty"`
@@ -4416,7 +4416,7 @@ func (q *Query) Distinct(key string, result interface{}) error {
 	dbname := op.collection[:c]
 	cname := op.collection[c+1:]
 
-	var doc struct {
+	var doc struct { // bson notation
 		Values bson.Raw `bson:"values"`
 	}
 	err := session.DB(dbname).Run(distinctCmd{cname, key, op.query}, &doc)
@@ -4426,7 +4426,7 @@ func (q *Query) Distinct(key string, result interface{}) error {
 	return doc.Values.Unmarshal(result)
 }
 
-type mapReduceCmd struct {
+type mapReduceCmd struct { // bson notation
 	Collection string      `bson:"mapreduce"`
 	Map        string      `bson:"map,omitempty"`
 	Reduce     string      `bson:"reduce,omitempty"`
@@ -4439,7 +4439,7 @@ type mapReduceCmd struct {
 	Verbose    bool        `bson:"verbose,omitempty"`
 }
 
-type mapReduceResult struct {
+type mapReduceResult struct { // bson notation
 	Results    bson.Raw `bson:"results"`
 	Result     bson.Raw `bson:"result"`
 	TimeMillis int64    `bson:"timeMillis"`
@@ -4449,7 +4449,7 @@ type mapReduceResult struct {
 		Output int `bson:"output"`
 	} `bson:"counts"`
 	Ok     bool           `bson:"ok"`
-	Err    string         `bson:"$err"`
+	Err    string         `bson:"err"`
 	Timing *MapReduceTime `bson:"timing"`
 }
 
@@ -4459,13 +4459,13 @@ type mapReduceResult struct {
 //
 //    https://docs.mongodb.com/manual/core/map-reduce/
 //
-type MapReduce struct {
-	Map      string      // Map Javascript function code (required)
-	Reduce   string      // Reduce Javascript function code (required)
-	Finalize string      // Finalize Javascript function code (optional)
-	Out      interface{} // Output collection name or document. If nil, results are inlined into the result parameter.
-	Scope    interface{} // Optional global scope for Javascript functions
-	Verbose  bool
+type MapReduce struct { // bson notation
+	Map      string      `bson:"map"`      // Map Javascript function code (required)
+	Reduce   string      `bson:"reduce"`   // Reduce Javascript function code (required)
+	Finalize string      `bson:"finalize"` // Finalize Javascript function code (optional)
+	Out      interface{} `bson:"out"`      // Output collection name or document. If nil, results are inlined into the result parameter.
+	Scope    interface{} `bson:"scope"`    // Optional global scope for Javascript functions
+	Verbose  bool        `bson:"verbose"`
 }
 
 // MapReduceInfo stores informations on a MapReduce operation
@@ -4480,8 +4480,8 @@ type MapReduceInfo struct {
 }
 
 // MapReduceTime stores execution time of a MapReduce operation
-type MapReduceTime struct {
-	Total    int64 // Total time, in nanoseconds
+type MapReduceTime struct { // bson notation
+	Total    int64 `bson:"total"`    // Total time, in nanoseconds
 	Map      int64 `bson:"mapTime"`  // Time within map function, in nanoseconds
 	EmitLoop int64 `bson:"emitLoop"` // Time within the emit/map loop, in nanoseconds
 }
@@ -4597,7 +4597,10 @@ func (q *Query) MapReduce(job *MapReduce, result interface{}) (info *MapReduceIn
 		err = doc.Result.Unmarshal(&info.Collection)
 		info.Database = dbname
 	} else if doc.Result.Kind == 0x03 {
-		var v struct{ Collection, Db string }
+		var v struct { // bson notation
+			Collection string `bson:"collection"`
+			Db         string `bson:"db"`
+		}
 		err = doc.Result.Unmarshal(&v)
 		info.Collection = v.Collection
 		info.Database = v.Db
@@ -4658,14 +4661,19 @@ type Change struct {
 	ReturnNew bool        // Should the modified document be returned rather than the old one
 }
 
-type findModifyCmd struct {
-	Collection                  string      `bson:"findAndModify"`
-	Query, Update, Sort, Fields interface{} `bson:",omitempty"`
-	Upsert, Remove, New         bool        `bson:",omitempty"`
+type findModifyCmd struct { // bson notation
+	Collection string      `bson:"findAndModify"`
+	Query      interface{} `bson:"query,omitempty"`
+	Update     interface{} `bson:"update,omitempty"`
+	Sort       interface{} `bson:"sort,omitempty"`
+	Fields     interface{} `bson:"fields,omitempty"`
+	Upsert     bool        `bson:"upsert,omitempty"`
+	Remove     bool        `bson:"remove,omitempty"`
+	New        bool        `bson:"new,omitempty"`
 }
 
-type valueResult struct {
-	Value     bson.Raw
+type valueResult struct { // bson notation
+	Value     bson.Raw  `bson:"value"`
 	LastError LastError `bson:"lastErrorObject"`
 }
 
@@ -4769,15 +4777,15 @@ func (q *Query) Apply(change Change, result interface{}) (info *ChangeInfo, err 
 // Note that the VersionArray field was introduced in MongoDB 2.0+, but it is
 // internally assembled from the Version information for previous versions.
 // In both cases, VersionArray is guaranteed to have at least 4 entries.
-type BuildInfo struct {
-	Version        string
+type BuildInfo struct { // bson notation
+	Version        string `bson:"version"`
 	VersionArray   []int  `bson:"versionArray"` // On MongoDB 2.0+; assembled from Version otherwise
 	GitVersion     string `bson:"gitVersion"`
 	OpenSSLVersion string `bson:"OpenSSLVersion"`
 	SysInfo        string `bson:"sysInfo"` // Deprecated and empty on MongoDB 3.2+.
-	Bits           int
-	Debug          bool
-	MaxObjectSize  int `bson:"maxBsonObjectSize"`
+	Bits           int    `bson:"bits"`
+	Debug          bool   `bson:"debug"`
+	MaxObjectSize  int    `bson:"maxBsonObjectSize"`
 }
 
 // VersionAtLeast returns whether the BuildInfo version is greater than or
@@ -4946,11 +4954,11 @@ func (iter *Iter) replyFunc() replyFunc {
 			}
 		} else if iter.isFindCmd {
 			debugf("Iter %p received reply document %d/%d (cursor=%d)", iter, docNum+1, int(op.replyDocs), op.cursorId)
-			var findReply struct {
-				Ok     bool
-				Code   int
-				Errmsg string
-				Cursor cursorData
+			var findReply struct { // bson notation
+				Ok     bool       `bson:"ok"`
+				Code   int        `bson:"code"`
+				Errmsg string     `bson:"errmsg"`
+				Cursor cursorData `bson:"cursor"`
 			}
 			if err := bson.Unmarshal(docData, &findReply); err != nil {
 				iter.err = err
@@ -4996,7 +5004,7 @@ func (iter *Iter) replyFunc() replyFunc {
 	}
 }
 
-type writeCmdResult struct {
+type writeCmdResult struct { // bson notation
 	Ok        bool `bson:"ok"`
 	N         int  `bson:"n"`
 	NModified int  `bson:"nModified"`
@@ -5008,15 +5016,15 @@ type writeCmdResult struct {
 	Errors       []writeCmdError   `bson:"writeErrors"`
 }
 
-type writeConcernError struct {
-	Code   int
-	ErrMsg string
+type writeConcernError struct { // bson notation
+	Code   int    `bson:"code"`
+	ErrMsg string `bson:"errmsg"`
 }
 
-type writeCmdError struct {
-	Index  int
-	Code   int
-	ErrMsg string
+type writeCmdError struct { // bson notation
+	Index  int    `bson:"index"`
+	Code   int    `bson:"code"`
+	ErrMsg string `bson:"errmsg"`
 }
 
 func (r *writeCmdResult) BulkErrorCases() []BulkErrorCase {

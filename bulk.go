@@ -48,9 +48,9 @@ type bulkUpdateOp []interface{}
 type bulkDeleteOp []interface{}
 
 // BulkResult holds the results for a bulk operation.
-type BulkResult struct {
-	Matched  int
-	Modified int // Available only for MongoDB 2.6+
+type BulkResult struct { // bson notation
+	Matched  int `bson:"matched"`
+	Modified int `bson:"modified"` // Available only for MongoDB 2.6+
 
 	// Be conservative while we understand exactly how to report these
 	// results in a useful and convenient way, and also how to emulate
@@ -107,9 +107,9 @@ func (slice bulkErrorCases) Swap(i, j int)      { slice[i], slice[j] = slice[j],
 // the functionality that works. In particular, only the last error is reported
 // for bulk inserts and without any positional information, so the Index
 // field is set to -1 in these cases.
-type BulkErrorCase struct {
-	Index int // Position of operation that failed, or -1 if unknown.
-	Err   error
+type BulkErrorCase struct { // bson noation
+	Index int   `bson:"index"` // Position of operation that failed, or -1 if unknown.
+	Err   error `bson:"err"`
 }
 
 // Cases returns all individual errors found while attempting the requested changes.

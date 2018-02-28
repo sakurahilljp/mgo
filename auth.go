@@ -38,7 +38,7 @@ import (
 	"github.com/sakurahilljp/mgo/internal/scram"
 )
 
-type authCmd struct {
+type authCmd struct { // bson notation
 	Authenticate int `bson:"authenticate"`
 
 	Nonce string `bson:"nonce"`
@@ -46,30 +46,30 @@ type authCmd struct {
 	Key   string `bson:"key"`
 }
 
-type startSaslCmd struct {
+type startSaslCmd struct { // bson notation
 	StartSASL int `bson:"startSasl"`
 }
 
-type authResult struct {
+type authResult struct { // bson notation
 	ErrMsg string `bson:"errmsg"`
 	Ok     bool   `bson:"ok"`
 }
 
-type getNonceCmd struct {
+type getNonceCmd struct { // bson notation
 	GetNonce int `bson:"getnonce"`
 }
 
-type getNonceResult struct {
+type getNonceResult struct { // bson notation
 	Nonce string `bson:"nonce"`
 	Err   string `bson:"$err"`
 	Code  int    `bson:"code"`
 }
 
-type logoutCmd struct {
+type logoutCmd struct { // bson notation
 	Logout int `bson:"logout"`
 }
 
-type saslCmd struct {
+type saslCmd struct { // bson notation
 	Start          int    `bson:"saslStart,omitempty"`
 	Continue       int    `bson:"saslContinue,omitempty"`
 	ConversationId int    `bson:"conversationId,omitempty"`
@@ -77,7 +77,7 @@ type saslCmd struct {
 	Payload        []byte `bson:"payload"`
 }
 
-type saslResult struct {
+type saslResult struct { // bson notation
 	Ok    bool `bson:"ok"`
 	NotOk bool `bson:"code"` // Server <= 2.3.2 returns ok=1 & code>0 on errors (WTF?)
 	Done  bool `bson:"done"`
@@ -235,10 +235,10 @@ func (socket *mongoSocket) loginClassic(cred Credential) error {
 	})
 }
 
-type authX509Cmd struct {
-	Authenticate int
-	User         string
-	Mechanism    string
+type authX509Cmd struct { // bson notation
+	Authenticate int    `bson:"authentiate"`
+	User         string `bson:"user"`
+	Mechanism    string `bson:"mechanism"`
 }
 
 func (socket *mongoSocket) loginX509(cred Credential) error {

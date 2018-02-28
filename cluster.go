@@ -131,7 +131,7 @@ func (cluster *mongoCluster) removeServer(server *mongoServer) {
 	server.CloseIdle()
 }
 
-type isMasterResult struct { // mongo command
+type isMasterResult struct { // bson notation
 	IsMaster       bool     `bson:"ismaster"`
 	Secondary      bool     `bson:"secondary"`
 	Primary        string   `bson:"primary"`

@@ -59,9 +59,9 @@ import (
 //    https://docs.mongodb.com/manual/core/gridfs/#gridfs-chunks-collection
 //    https://docs.mongodb.com/manual/core/gridfs/#gridfs-files-collection
 //
-type GridFS struct {
-	Files  *Collection
-	Chunks *Collection
+type GridFS struct { // bson notation
+	Files  *Collection `bson:"files"`
+	Chunks *Collection `bson:"chunks"`
 }
 
 type gfsFileMode int
@@ -93,22 +93,22 @@ type GridFile struct {
 	doc gfsFile
 }
 
-type gfsFile struct {
+type gfsFile struct { // bson notation
 	Id          interface{} `bson:"_id"`
 	ChunkSize   int         `bson:"chunkSize"`
 	UploadDate  time.Time   `bson:"uploadDate"`
-	Length      int64       `bson:",minsize"`
-	MD5         string
-	Filename    string    `bson:",omitempty"`
-	ContentType string    `bson:"contentType,omitempty"`
-	Metadata    *bson.Raw `bson:",omitempty"`
+	Length      int64       `bson:"length,minsize"`
+	MD5         string      `bson:"md5"`
+	Filename    string      `bson:"filename,omitempty"`
+	ContentType string      `bson:"contentType,omitempty"`
+	Metadata    *bson.Raw   `bson:"metadata,omitempty"`
 }
 
-type gfsChunk struct {
+type gfsChunk struct { // bson notation
 	Id      interface{} `bson:"_id"`
 	FilesId interface{} `bson:"files_id"`
-	N       int
-	Data    []byte
+	N       int         `bson:"n"`
+	Data    []byte      `bson:"data"`
 }
 
 type gfsCachedChunk struct {
@@ -344,7 +344,7 @@ func (gfs *GridFS) RemoveId(id interface{}) error {
 	return err
 }
 
-type gfsDocId struct {
+type gfsDocId struct { // bson notation
 	Id interface{} `bson:"_id"`
 }
 

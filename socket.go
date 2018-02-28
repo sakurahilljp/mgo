@@ -83,7 +83,7 @@ type queryOp struct {
 	readConcern string
 }
 
-type queryWrapper struct {
+type queryWrapper struct { // bson notation
 	Query          interface{} `bson:"$query"`
 	OrderBy        interface{} `bson:"$orderby,omitempty"`
 	Hint           interface{} `bson:"$hint,omitempty"`
@@ -155,7 +155,7 @@ type insertOp struct {
 	flags      uint32
 }
 
-type updateOp struct {
+type updateOp struct { // bson notation
 	Collection string      `bson:"-"` // "database.collection"
 	Selector   interface{} `bson:"q"`
 	Update     interface{} `bson:"u"`
@@ -164,7 +164,7 @@ type updateOp struct {
 	Upsert     bool        `bson:"upsert,omitempty"`
 }
 
-type deleteOp struct {
+type deleteOp struct { // bson notation
 	Collection string      `bson:"-"` // "database.collection"
 	Selector   interface{} `bson:"q"`
 	Flags      uint32      `bson:"-"`
